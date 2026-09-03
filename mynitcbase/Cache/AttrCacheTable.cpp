@@ -21,6 +21,29 @@ int AttrCacheTable::getAttrCatEntry(int relId,int attrOffset, AttrCatEntry* attr
     return E_ATTRNOTEXIST;
 }
 
+int AttrCacheTable::getAttrCatEntry(int relId,char attrName[ATTR_SIZE], AttrCatEntry* attrCatBuf)
+{
+    if(relId<0 || relId>=MAX_OPEN)
+        return E_OUTOFBOUND;
+    if(attrCache[relId]==nullptr)
+        return E_RELNOTOPEN;
+    AttrCacheEntry* temp = attrCache[relId];
+    bool found = false;
+    while(temp!=nullptr)
+    {
+        if(strcmp((temp->attrCatEntry).attrName,attrName) == 0)
+        {
+            *attrCatBuf = temp->attrCatEntry;
+            found = true;
+            break;
+        }
+        temp = temp->next;
+    }
+    if(!found)
+        return E_ATTRNOTEXIST;
+    return SUCCESS;
+}
+
 void AttrCacheTable::recordToAttrCatEntry(union Attribute record[ATTRCAT_NO_ATTRS],AttrCatEntry* attrCatEntry)
 {
     strcpy(attrCatEntry->relName,record[ATTRCAT_REL_NAME_INDEX].sVal);

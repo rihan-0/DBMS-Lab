@@ -7,7 +7,7 @@
 #include<cstring>
 using namespace std;
 
-void changeAttrName(char* changeFrmRel,char* changeFrm,char* changeTo)
+/*void changeAttrName(char* changeFrmRel,char* changeFrm,char* changeTo)
 {
     bool relFound = false;
     bool attrFound = false;
@@ -93,7 +93,7 @@ void printSchema()
         }
         printf("\n");
     }
-}
+}*/
 
 int main(int argc, char *argv[]) {
     /* Initialize the Run Copy of Disk */
@@ -101,15 +101,9 @@ int main(int argc, char *argv[]) {
     StaticBuffer buffer;
     OpenRelTable cache;
 
-    /*char Student[16] = "Students";
-    char Class[16] = "Class";
-    char Batch[16] = "Batch";
+    return FrontendInterface::handleFrontend(argc, argv);
 
-    changeAttrName(Student,Class,Batch);
-    
-    printSchema();*/
-
-    for(int i=0;i<3;i++)
+    /*for(int i=0;i<3;i++)
     {
         RelCatEntry relCatBuffer;
         RelCacheTable::getRelCatEntry(i,&relCatBuffer);
@@ -124,6 +118,5 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    return 0;
-    //return FrontendInterface::handleFrontend(argc, argv);
+    return 0;*/
 }

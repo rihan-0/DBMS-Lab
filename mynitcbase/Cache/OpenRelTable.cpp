@@ -19,6 +19,8 @@ OpenRelTable::OpenRelTable()
     RelCacheTable::recordToRelCatEntry(relCatRecord,&relCacheEntry.relCatEntry);
     relCacheEntry.recId.block = RELCAT_BLOCK;
     relCacheEntry.recId.slot = RELCAT_SLOTNUM_FOR_RELCAT;
+    relCacheEntry.dirty = false;
+    relCacheEntry.searchIndex = {-1, -1};
     
     RelCacheTable::relCache[RELCAT_RELID] = (struct RelCacheEntry*)malloc(sizeof(RelCacheEntry));
     *(RelCacheTable::relCache[RELCAT_RELID]) = relCacheEntry;
@@ -27,6 +29,8 @@ OpenRelTable::OpenRelTable()
     RelCacheTable::recordToRelCatEntry(relCatRecord,&relCacheEntry.relCatEntry);
     relCacheEntry.recId.block = RELCAT_BLOCK;
     relCacheEntry.recId.slot = RELCAT_SLOTNUM_FOR_ATTRCAT;
+    relCacheEntry.dirty = false;
+    relCacheEntry.searchIndex = {-1, -1};
     
     RelCacheTable::relCache[ATTRCAT_RELID] = (struct RelCacheEntry*)malloc(sizeof(RelCacheEntry));
     *(RelCacheTable::relCache[ATTRCAT_RELID]) = relCacheEntry;
@@ -131,6 +135,18 @@ OpenRelTable::OpenRelTable()
     AttrCacheTable::attrCache[2] = head;
 
     //End of stage 3 q1
+}
+
+int OpenRelTable::getRelId(char relname[ATTR_SIZE])
+{
+    if(strcmp(relname,RELCAT_RELNAME)==0)
+        return RELCAT_RELID;
+    if(strcmp(relname,ATTRCAT_RELNAME)==0)
+        return ATTRCAT_RELID;
+    //stage 4 q1
+    if(strcmp(relname,"Students")==0)
+        return 2;
+    return E_RELNOTOPEN;
 }
 
 OpenRelTable::~OpenRelTable()

@@ -4,12 +4,45 @@
 #include <cstring>
 #include <cstdio>
 
+int compareAttrs(union Attribute attr1,union Attribute attr2,int attrType)
+{
+    double diff;
+    if(attrType==STRING)
+        diff = strcmp(attr1.sVal,attr2.sVal);
+    else
+        diff = attr1.nVal - attr2.nVal;
+    if(diff>0)
+        return 1;
+    if(diff<0)
+        return -1;
+    if(diff==0)
+        return 0;
+}
+
 BlockBuffer::BlockBuffer(int blockNum)
 {
     this->blockNum = blockNum;
 }
 
 RecBuffer::RecBuffer(int blockNum) : BlockBuffer::BlockBuffer(blockNum) {}
+
+int RecBuffer::getSlotMap(unsigned char *slotmap)
+{
+    unsigned char *bufferPtr;
+
+    int ret = loadBlockAndGetBufferPtr(&bufferPtr);
+    if(ret!=SUCCESS)
+        return ret;
+    struct HeadInfo head;
+    ret = getHeader(&head);
+    if(ret!=SUCCESS)
+        return ret;
+    int slotCount = head.numSlots;
+
+    unsigned char *slotMapInBuffer = bufferPtr + HEADER_SIZE;
+    memcpy(slotmap,slotMapInBuffer,slotCount);
+    return SUCCESS;
+}
 
 int BlockBuffer::getHeader(struct HeadInfo *head)
 {
