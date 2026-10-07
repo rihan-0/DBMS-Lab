@@ -76,3 +76,4 @@ RecId BlockAccess::linearSearch(int relId,char attrName[ATTR_SIZE],union Attribu
     retId.slot = -1;
     return retId;
 }
+
