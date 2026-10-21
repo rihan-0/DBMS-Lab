@@ -272,6 +272,21 @@ int BlockBuffer::getFreeBlock(int blockType) {
     return freeBlock;
 }
 
+void BlockBuffer::releaseBlock() {
+    if (this->blockNum == INVALID_BLOCKNUM || this->blockNum < 0 || this->blockNum >= DISK_BLOCKS)
+        return;
+        
+    int bufferNum = StaticBuffer::getBufferNum(this->blockNum);
+
+    if (bufferNum != E_BLOCKNOTINBUFFER) {
+        StaticBuffer::metainfo[bufferNum].free = true;
+    }
+
+    StaticBuffer::blockAllocMap[this->blockNum] = UNUSED_BLK;
+
+    this->blockNum = INVALID_BLOCKNUM;
+}
+
 int BlockBuffer::getBlockNum()
 {
     return this->blockNum;

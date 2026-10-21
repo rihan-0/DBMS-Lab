@@ -64,3 +64,74 @@ int Schema::renameAttr(char *relName, char *oldAttrName, char *newAttrName)
     return retVal;
 
 }
+
+int Schema::createRel(char relName[], int nAttrs, char attrs[][ATTR_SIZE], int attrtype[]) {
+    union Attribute relNameAsAttribute;
+    strcpy(relNameAsAttribute.sVal, relName);
+
+    RelCacheTable::resetSearchIndex(RELCAT_RELID);
+
+    RecId targetRelId = BlockAccess::linearSearch(RELCAT_RELID, (char *)"RelName", relNameAsAttribute, EQ);
+
+    if (targetRelId.block != -1 && targetRelId.slot != -1) {
+        return E_RELEXIST;
+    }
+
+    for (int i = 0; i < nAttrs; i++) {
+        for (int j = i + 1; j < nAttrs; j++) {
+            if (strcmp(attrs[i], attrs[j]) == 0) {
+                return E_DUPLICATEATTR;
+            }
+        }
+    }
+
+    union Attribute relCatRecord[RELCAT_NO_ATTRS];
+
+    strcpy(relCatRecord[RELCAT_REL_NAME_INDEX].sVal, relName);
+    relCatRecord[RELCAT_NO_ATTRIBUTES_INDEX].nVal = nAttrs;
+    relCatRecord[RELCAT_NO_RECORDS_INDEX].nVal = 0;
+    relCatRecord[RELCAT_FIRST_BLOCK_INDEX].nVal = -1;
+    relCatRecord[RELCAT_LAST_BLOCK_INDEX].nVal = -1;
+
+    int slotsPerBlock = 2016 / (16 * nAttrs + 1);
+    relCatRecord[RELCAT_NO_SLOTS_PER_BLOCK_INDEX].nVal = slotsPerBlock;
+
+    int retVal = BlockAccess::insert(RELCAT_RELID, relCatRecord);
+    if (retVal != SUCCESS) {
+        return retVal;
+    }
+
+    for (int i = 0; i < nAttrs; i++) {
+        union Attribute attrCatRecord[ATTRCAT_NO_ATTRS];
+
+        strcpy(attrCatRecord[ATTRCAT_REL_NAME_INDEX].sVal, relName);
+        strcpy(attrCatRecord[ATTRCAT_ATTR_NAME_INDEX].sVal, attrs[i]);
+        attrCatRecord[ATTRCAT_ATTR_TYPE_INDEX].nVal = attrtype[i];
+        attrCatRecord[ATTRCAT_PRIMARY_FLAG_INDEX].nVal = -1;
+        attrCatRecord[ATTRCAT_ROOT_BLOCK_INDEX].nVal = -1;
+        attrCatRecord[ATTRCAT_OFFSET_INDEX].nVal = i;
+
+        retVal = BlockAccess::insert(ATTRCAT_RELID, attrCatRecord);
+
+        if (retVal != SUCCESS) {
+            Schema::deleteRel(relName);
+            return E_DISKFULL;
+        }
+    }
+
+    return SUCCESS;
+}
+
+int Schema::deleteRel(char *relName) {
+    if (strcmp(relName, RELCAT_RELNAME) == 0 || strcmp(relName, ATTRCAT_RELNAME) == 0) {
+        return E_NOTPERMITTED;
+    }
+
+    int relId = OpenRelTable::getRelId(relName);
+
+    if (relId != E_RELNOTOPEN) {
+        return E_RELOPEN;
+    }
+
+    return BlockAccess::deleteRelation(relName);
+}

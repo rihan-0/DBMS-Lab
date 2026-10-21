@@ -123,22 +123,54 @@ OpenRelTable::~OpenRelTable()
         }
     }
 
-    for (int i = 0; i < 2; ++i) {
-        if (RelCacheTable::relCache[i] != nullptr) {
-            free(RelCacheTable::relCache[i]);
-            RelCacheTable::relCache[i] = nullptr;
-        }
+    if(RelCacheTable::relCache[ATTRCAT_RELID]->dirty)
+    {
+        RelCatEntry relCatEntry = RelCacheTable::relCache[ATTRCAT_RELID]->relCatEntry;
+        union Attribute record[RELCAT_NO_ATTRS];
+        RelCacheTable::relCatEntryToRecord(&relCatEntry,record);
 
-        AttrCacheEntry *curr = AttrCacheTable::attrCache[i];
+        RecId recId = RelCacheTable::relCache[ATTRCAT_RELID]->recId;
 
-        while (curr != nullptr) {
-            AttrCacheEntry *next = curr->next;
-            free(curr);
-            curr = next;
-        }
+        RecBuffer relCatBlock(recId.block);
 
-        AttrCacheTable::attrCache[i] = nullptr;
+        relCatBlock.setRecord(record,recId.slot);
     }
+
+    free(RelCacheTable::relCache[ATTRCAT_RELID]);
+    RelCacheTable::relCache[ATTRCAT_RELID] = nullptr;
+    
+    if(RelCacheTable::relCache[RELCAT_RELID]->dirty)
+    {
+        RelCatEntry relCatEntry = RelCacheTable::relCache[RELCAT_RELID]->relCatEntry;
+        union Attribute record[RELCAT_NO_ATTRS];
+        RelCacheTable::relCatEntryToRecord(&relCatEntry,record);
+
+        RecId recId = RelCacheTable::relCache[RELCAT_RELID]->recId;
+
+        RecBuffer relCatBlock(recId.block);
+
+        relCatBlock.setRecord(record,recId.slot);
+    }
+
+    free(RelCacheTable::relCache[RELCAT_RELID]);
+    RelCacheTable::relCache[RELCAT_RELID] = nullptr;
+
+
+    AttrCacheEntry *curr = AttrCacheTable::attrCache[RELCAT_RELID];
+    while (curr != nullptr) {
+        AttrCacheEntry *next = curr->next;
+        free(curr);
+        curr = next;
+    }
+    AttrCacheTable::attrCache[RELCAT_RELID] = nullptr;
+
+    curr = AttrCacheTable::attrCache[ATTRCAT_RELID];
+    while (curr != nullptr) {
+        AttrCacheEntry *next = curr->next;
+        free(curr);
+        curr = next;
+    }
+    AttrCacheTable::attrCache[ATTRCAT_RELID] = nullptr;
 }
 
 int OpenRelTable::closeRel(int relId) {
