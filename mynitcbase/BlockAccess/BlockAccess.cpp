@@ -2,6 +2,54 @@
 
 #include <cstring>
 
+int BlockAccess::project(int relId, union Attribute *record) {
+    RecId prevRecId;
+    RelCacheTable::getSearchIndex(relId, &prevRecId);
+
+    int block, slot;
+
+    if (prevRecId.block == -1 && prevRecId.slot == -1) {
+        RelCatEntry relCatEntry;
+        RelCacheTable::getRelCatEntry(relId, &relCatEntry);
+
+        block = relCatEntry.firstBlk;
+        slot = 0;
+    } else {
+        block = prevRecId.block;
+        slot = prevRecId.slot + 1;
+    }
+
+    while (block != -1) {
+        RecBuffer recBlock(block);
+        HeadInfo head;
+        recBlock.getHeader(&head);
+
+        unsigned char slotMap[head.numSlots];
+        recBlock.getSlotMap(slotMap);
+
+        if (slot >= head.numSlots) {
+            block = head.rblock;
+            slot = 0;
+        } else if (slotMap[slot] == SLOT_UNOCCUPIED) {
+            slot++;
+        } else {
+            break;
+        }
+    }
+
+    if (block == -1) {
+        return E_NOTFOUND;
+    }
+
+    RecId nextRecId{block, slot};
+    RelCacheTable::setSearchIndex(relId, &nextRecId);
+
+    RecBuffer recBlock(nextRecId.block);
+    recBlock.getRecord(record, nextRecId.slot);
+
+    return SUCCESS;
+}
+
 int BlockAccess::search(int relId, Attribute *record, char attrName[ATTR_SIZE], Attribute attrVal, int op) {
     RecId recId;
 
