@@ -2,6 +2,8 @@
 #include <iostream>
 #include <cstring>
 
+extern long long int count;
+
 bool isNumber(char *str) {
   int len;
   float ignore;
@@ -108,6 +110,9 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
     Attribute record[src_nAttrs];
 
     RelCacheTable::resetSearchIndex(srcRelId);
+    AttrCacheTable::resetSearchIndex(srcRelId,attr);
+
+    count = 0;
 
     while (BlockAccess::search(srcRelId, record, attr, attrVal, op) == SUCCESS) {
         int ret = BlockAccess::insert(targetRelId, record);
@@ -118,7 +123,7 @@ int Algebra::select(char srcRel[ATTR_SIZE], char targetRel[ATTR_SIZE], char attr
             return ret;
         }
     }
-
+    std::cout<<count<<'\n';
     Schema::closeRel(targetRel);
     return SUCCESS;
 }

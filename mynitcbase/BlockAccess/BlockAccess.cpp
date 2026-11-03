@@ -1,5 +1,4 @@
 #include "BlockAccess.h"
-
 #include <cstring>
 
 int BlockAccess::project(int relId, union Attribute *record) {
@@ -52,9 +51,21 @@ int BlockAccess::project(int relId, union Attribute *record) {
 
 int BlockAccess::search(int relId, Attribute *record, char attrName[ATTR_SIZE], Attribute attrVal, int op) {
     RecId recId;
+    AttrCatEntry attrCatBuf;
 
-    recId = BlockAccess::linearSearch(relId, attrName, attrVal, op);
-
+    int ret = AttrCacheTable::getAttrCatEntry(relId,attrName,&attrCatBuf);
+    if(ret != SUCCESS)
+        return ret;
+    int rootBlock = attrCatBuf.rootBlock;
+    if(rootBlock==-1)
+    {
+        recId = BlockAccess::linearSearch(relId, attrName, attrVal, op);
+    }
+    else
+    {
+        recId = BPlusTree::bPlusSearch(relId,attrName,attrVal,op);
+    }
+    
     if (recId.block == -1 && recId.slot == -1) {
         return E_NOTFOUND;
     }
@@ -130,7 +141,6 @@ RecId BlockAccess::linearSearch(int relId,char attrName[ATTR_SIZE],union Attribu
             matchedRecId.block = block;
             matchedRecId.slot = slot;
             RelCacheTable::setSearchIndex(relId,&matchedRecId);
-
             return matchedRecId;
         }
         slot++;
